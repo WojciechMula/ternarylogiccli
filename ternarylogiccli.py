@@ -60,7 +60,7 @@ def parse_args():
                     help="display only constant")
     ap.add_argument("expr",
                     metavar="EXPR",
-                    nargs='*',
+                    nargs='+',
                     help="boolean expression with at most three variables")
 
     args = ap.parse_args()
