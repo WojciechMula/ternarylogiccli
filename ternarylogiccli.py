@@ -8,7 +8,6 @@ from itertools import product
 from io import BytesIO
 
 
-
 def main():
     args = parse_args()
     
@@ -177,4 +176,8 @@ class Parser:
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except Exception as e:
+        print(f"Unhandled exception: {e}")
+        sys.exit(2)
