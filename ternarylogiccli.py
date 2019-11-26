@@ -2,6 +2,7 @@
 
 import sys
 import argparse
+import re
 from tokenize import tokenize, untokenize, TokenInfo, \
                      NAME, OP, ENCODING, ENDMARKER, NEWLINE, ERRORTOKEN
 from itertools import product
@@ -10,9 +11,9 @@ from io import BytesIO
 
 def main():
     args = parse_args()
-    
+
     try:
-        fun = parse_expression(args.expr)
+        fun = parse_expression(args.expr, args.vars)
     except InvalidExpression as e:
         print(e)
         return 1
@@ -58,6 +59,9 @@ def parse_args():
                     action='store_true',
                     dest="quiet",
                     help="display only constant")
+    ap.add_argument("--vars", "--order",
+                    help="give variables in order from the most significant to least signficant; "
+                         "1-3 vars allowed, separated with the comma")
     ap.add_argument("expr",
                     metavar="EXPR",
                     nargs='+',
@@ -65,11 +69,26 @@ def parse_args():
 
     args = ap.parse_args()
     args.expr = ' '.join(args.expr)
+
+    if args.vars is not None:
+        variables = args.vars.split(',')
+        k = len(variables)
+        if not (1 <= k <= 3):
+            ap.error(f"--vars options requires one, two or three arguments, {k} given")
+
+        for i, var in enumerate(variables):
+            if not var:
+                ap.error(f"variable #{i + 1} must not be empty")
+            if not re.match("[a-zA-Z_][a-zA-Z0-9_]*", var):
+                ap.error(f"'{var}' is not a valid variable name")
+        else:
+            args.vars = variables
+
     return args
 
 
-def parse_expression(expr):
-    p = Parser()
+def parse_expression(expr, variables):
+    p = Parser(variables)
     tokens, mapping = p.parse(expr)
     expr_string = untokenize(tokens).decode('utf-8')
 
@@ -81,7 +100,7 @@ class Function:
 
 
 def calculate_function(expr_str, var_mapping):
-    
+
     def evaluate(a, b, c):
         env = {var_mapping['a']: a,
                var_mapping['b']: b,
@@ -102,7 +121,7 @@ def calculate_function(expr_str, var_mapping):
         fun.table.append((a, b, c, v))
 
         if v:
-            fun.value |= (1 << i) 
+            fun.value |= (1 << i)
 
     return fun
 
@@ -112,15 +131,19 @@ class InvalidExpression(ValueError):
 
 
 class Parser:
-    def __init__(self):
+    def __init__(self, variables):
         self.mapping = {}
+        self.variables = variables
 
 
     def parse(self, expr):
         tokens = tokenize(BytesIO(expr.encode('utf-8')).readline)
         tokens = self.__replace_operators(tokens)
-        tokens = self.__collect_vars(tokens)
-        
+        if self.variables:
+            tokens = self.__validate_vars(tokens)
+        else:
+            tokens = self.__collect_vars(tokens)
+
         return (tokens, self.mapping)
 
 
@@ -138,6 +161,26 @@ class Parser:
         # we're fine with unary and binary functions too
         for v in free_vars:
             self.mapping[v] = f"-"
+
+        return tokens
+
+
+    def __validate_vars(self, tokens):
+        tokens = list(tokens)
+        for token in tokens:
+            if token.type == NAME and token.string not in self.variables:
+                raise InvalidExpression(f"Unknown variable '{token.string}'")
+
+        self.mapping['a'] = self.variables[0]
+        try:
+            self.mapping['b'] = self.variables[1]
+        except IndexError:
+            self.mapping['b'] = f"-"
+
+        try:
+            self.mapping['c'] = self.variables[2]
+        except IndexError:
+            self.mapping['c'] = f"-"
 
         return tokens
 
