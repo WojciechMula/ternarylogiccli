@@ -16,7 +16,9 @@ __ https://github.com/sneves/avx512-utils
 
 Expressions may contain parentheses and operators ``and``/``&``, ``or``/``|``,
 ``xor``/``^``, ``not``/``~``. There might be up to three variables, their
-names are derived from the expression.
+names are derived from the expression. By default, the first variable that
+appears in an expression becomes the most significant; the order of variables
+can be explicitly set with ``--vars`` argument (see example 5).
 
 See also a `programming library <https://github.com/WojciechMula/ternary-logic>`_
 that gives similar API, but works with SSE, AVX, AVX2 and x86 instruction sets.
@@ -79,8 +81,10 @@ Example 3
      6 | 1 | 1 | 0 |     1     
      7 | 1 | 1 | 1 |     1     
 
+    _mm512_ternarylogic_epi32(a, b, c, 0xea)
 
-Example 3
+
+Example 4
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ::
@@ -98,3 +102,51 @@ Example 3
      7 | 1 | 1 | 1 |       1      
 
     _mm512_ternarylogic_epi32(x, y, z, 0xb4)
+
+
+Example 5 --- variables order
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+::
+
+	$ ternary "a or b and c" --vars b,c,a
+	 # | b | c | a | a | b & c
+	---+---+---+---+-----------
+	 0 | 0 | 0 | 0 |     0     
+	 1 | 0 | 0 | 1 |     1     
+	 2 | 0 | 1 | 0 |     0     
+	 3 | 0 | 1 | 1 |     1     
+	 4 | 1 | 0 | 0 |     0     
+	 5 | 1 | 0 | 1 |     1     
+	 6 | 1 | 1 | 0 |     1     
+	 7 | 1 | 1 | 1 |     1     
+
+	_mm512_ternarylogic_epi32(b, c, a, 0xea)
+
+	$ ternary "a or b and c" --vars c,a,b
+	 # | c | a | b | a | b & c
+	---+---+---+---+-----------
+	 0 | 0 | 0 | 0 |     0     
+	 1 | 0 | 0 | 1 |     0     
+	 2 | 0 | 1 | 0 |     1     
+	 3 | 0 | 1 | 1 |     1     
+	 4 | 1 | 0 | 0 |     0     
+	 5 | 1 | 0 | 1 |     1     
+	 6 | 1 | 1 | 0 |     1     
+	 7 | 1 | 1 | 1 |     1     
+
+	_mm512_ternarylogic_epi32(c, a, b, 0xec)
+
+	$ ternary "a or b and c" --vars a,c,b
+	 # | a | c | b | a | b & c
+	---+---+---+---+-----------
+	 0 | 0 | 0 | 0 |     0     
+	 1 | 0 | 0 | 1 |     0     
+	 2 | 0 | 1 | 0 |     0     
+	 3 | 0 | 1 | 1 |     1     
+	 4 | 1 | 0 | 0 |     1     
+	 5 | 1 | 0 | 1 |     1     
+	 6 | 1 | 1 | 0 |     1     
+	 7 | 1 | 1 | 1 |     1     
+
+	_mm512_ternarylogic_epi32(a, c, b, 0xf8)
