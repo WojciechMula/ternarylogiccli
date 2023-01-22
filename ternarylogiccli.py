@@ -36,7 +36,9 @@ def main():
                 value |= (1 << i)
 
     def print_program():
-        print(f"_mm512_ternarylogic_epi32({fun.var_a}, {fun.var_b}, {fun.var_c}, 0x{fun.value:02x})")
+        print(f"C/C++  : _mm512_ternarylogic_epi32({fun.var_a}, {fun.var_b}, {fun.var_c}, 0x{fun.value:02x})")
+        print(f"GNU as : vpternlogd $0x{fun.value:02x}, {fun.var_a}, {fun.var_b}, {fun.var_c}")
+        print(f"GO asm : VPTERNLOGD $0x{fun.value:02x}, {fun.var_a}, {fun.var_b}, {fun.var_c}")
 
 
     def print_value():
